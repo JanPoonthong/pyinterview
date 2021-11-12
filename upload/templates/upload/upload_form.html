@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block body %}
 <h1>Upload</h1>
-<form action="/" method="POST" enctype="multipart/form-data">
+<form action="{% url 'upload' %}" method="POST" enctype="multipart/form-data">
 	<p>{{form.file}}</p>
 	<p>Password: {{form.password}} (optional)</p>
 	<p>Expires in: {{form.max_downloads}} or {{form.expire_duration}}</p>

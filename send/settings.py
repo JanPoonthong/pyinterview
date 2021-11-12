@@ -122,3 +122,5 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = env("STATIC_ROOT", default=os.path.join(BASE_DIR, "staticfiles"))
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
