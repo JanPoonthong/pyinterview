@@ -25,8 +25,8 @@ class UploadPage(CreateView):
             return HttpResponseRedirect("/success/")
         return render(request, self.template_name, self.initial)
 
-    def convert_duration_to_date(expire_duration):
-        expire_date = datetime.fromtimestamp(expire_duration).strftime(
+    def convert_duration_to_date(self, *args, **kwargs):
+        expire_date = datetime.fromtimestamp(*args).strftime(
             "%A, %B %d, %Y %I:%M:%S"
         )
         print(expire_date)
