@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django.views.generic import CreateView, DetailView
+from django.shortcuts import render
 
 from .form import UploadForm
 from .models import Upload
@@ -8,6 +9,10 @@ from .models import Upload
 class UploadPage(CreateView):
     model = Upload
     form_class = UploadForm
+    template_name = "form_template.html"
+
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name, {"form": form})
 
     # TODO:
     # 1) Convert expire_duration to expire_date

@@ -7,17 +7,27 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Upload',
+            name="Upload",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('password', models.CharField(blank=True, max_length=255, null=True)),
-                ('max_downloads', models.IntegerField()),
-                ('expire_date', models.DateTimeField()),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "password",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("max_downloads", models.IntegerField()),
+                ("expire_date", models.DateTimeField()),
             ],
         ),
     ]
