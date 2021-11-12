@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>filename goes here</h1>
+
+<form action="{% url 'download' object.id %}" method="POST">
+{% if object.password %}
+	<p>Password: <input name="password" type="password"></p>
+{% endif %}
+	{% csrf_token %}
+	<p><input type="submit" value="Download"></p>
+</form>
+{% endblock %}

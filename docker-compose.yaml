@@ -1,0 +1,13 @@
+version: '2.1'
+services:
+  app:
+    image: send
+    environment: 
+      ALLOWED_HOSTS: send,localhost
+      DATABASE_URL: sqlite:////database/db.sqlite3
+    ports:
+      - '8080:8080'
+    volumes:
+      - database:/database/
+volumes:
+  database: {}
