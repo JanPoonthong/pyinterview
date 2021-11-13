@@ -1,6 +1,7 @@
 from django.http import HttpResponse, HttpResponseRedirect
 from django.views.generic import CreateView, DetailView
 from django.shortcuts import render
+from django.urls import reverse
 
 from datetime import datetime
 
@@ -20,23 +21,33 @@ class UploadPage(CreateView):
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST, request.FILES)
         if form.is_valid():
-            expire_duration = int(form.cleaned_data["expire_duration"])
-            self.convert_duration_to_date(expire_duration)
-            return HttpResponseRedirect("/success/")
-        return render(request, self.template_name, self.initial)
+            expire_duration = int(self.cleaned_data(form, "expire_duration"))
+            expire_date = self.convert_duration_to_date(expire_duration)
+            form = Upload(
+                password=self.cleaned_data(form, "password"),
+                max_downloads=self.cleaned_data(form, "max_downloads"),
+                expire_date=expire_date,
+            )
+            form.save()
+            return HttpResponseRedirect(
+                reverse("download", kwargs={"pk": form.id})
+            )
+        # return render(request, self.template_name, self.initial)
+
+    def cleaned_data(self, form, value):
+        return form.cleaned_data[f"{value}"]
 
     def convert_duration_to_date(self, *args, **kwargs):
         expire_date = datetime.fromtimestamp(*args).strftime(
-            "%A, %B %d, %Y %I:%M:%S"
+            "%Y-%m-%d %H:%M:%S"
         )
-        print(expire_date)
+        return expire_date
 
     def upload_and_save_to_db():
         pass
 
     def generate_download_and_delete_link():
         pass
-
 
 
 class Download(DetailView):
