@@ -3,7 +3,6 @@ from .models import Upload
 
 
 class UploadForm(forms.ModelForm):
-    file = forms.FileField()
     max_downloads = forms.ChoiceField(
         choices=[
             (1, "1 download"),
@@ -27,7 +26,7 @@ class UploadForm(forms.ModelForm):
 
     class Meta:
         model = Upload
-        fields = ["password", "max_downloads"]
+        fields = ["password", "max_downloads", "file"]
         widgets = {
             "password": forms.PasswordInput(),
         }

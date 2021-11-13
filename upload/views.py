@@ -8,6 +8,9 @@ from datetime import datetime
 from .form import UploadForm
 from .models import Upload
 
+import mimetypes
+import os
+
 
 class UploadPage(CreateView):
     model = Upload
@@ -21,32 +24,35 @@ class UploadPage(CreateView):
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST, request.FILES)
         if form.is_valid():
-            expire_duration = int(self.cleaned_data(form, "expire_duration"))
+            print(dir(form.cleaned_data["file"]))
+            expire_duration = int(form.cleaned_data["expire_duration"])
             expire_date = self.convert_duration_to_date(expire_duration)
-            form = Upload(
-                password=self.cleaned_data(form, "password"),
-                max_downloads=self.cleaned_data(form, "max_downloads"),
-                expire_date=expire_date,
-            )
-            form.save()
+            upload_model = self.upload_and_save_to_db(form, expire_date)
             return HttpResponseRedirect(
-                reverse("download", kwargs={"pk": form.id})
+                reverse("download", kwargs={"pk": upload_model.id})
             )
-        # return render(request, self.template_name, self.initial)
 
-    def cleaned_data(self, form, value):
-        return form.cleaned_data[f"{value}"]
-
-    def convert_duration_to_date(self, *args, **kwargs):
-        expire_date = datetime.fromtimestamp(*args).strftime(
+    @staticmethod
+    def convert_duration_to_date(expire_duration):
+        # TODO(jan): DateTime is not correct
+        expire_date = datetime.fromtimestamp(expire_duration).strftime(
             "%Y-%m-%d %H:%M:%S"
         )
         return expire_date
 
-    def upload_and_save_to_db():
-        pass
+    @staticmethod
+    def upload_and_save_to_db(form, expire_date):
+        # TODO(jan): Check that file is not over 100MB
+        form = Upload(
+            file=form.cleaned_data["file"],
+            password=form.cleaned_data["password"],
+            max_downloads=form.cleaned_data["max_downloads"],
+            expire_date=expire_date,
+        )
+        form.save()
+        return form
 
-    def generate_download_and_delete_link():
+    def generate_download_and_delete_link(self):
         pass
 
 
@@ -63,7 +69,20 @@ class Download(DetailView):
             if self.request.POST.get("password") != "password":
                 return HttpResponse("invalid password")
 
-        return HttpResponse("todo")
+        return self.download_file(self.object)
+        # return HttpResponse(f"{self.object.file}")
+        # return HttpResponse("todo")
+
+    @staticmethod
+    def download_file(current_object):
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        filename = f"{os.path.basename(current_object.file.name)}"
+        filepath = BASE_DIR + f"/{current_object.file}"
+        path = open(filepath, "rb")
+        mime_type, _ = mimetypes.guess_type(filepath)
+        response = HttpResponse(path, content_type=mime_type)
+        response["Content-Disposition"] = "attachment; filename=%s" % filename
+        return response
 
         # TODO:
         # 1) Delete file when max_downloads is done
