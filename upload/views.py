@@ -1,6 +1,7 @@
 from django.http import HttpResponse, HttpResponseRedirect
 from django.views.generic import CreateView, DetailView
 from django.urls import reverse
+from django.shortcuts import render
 
 from datetime import datetime
 
@@ -17,9 +18,9 @@ class UploadPage(CreateView):
     form_class = UploadForm
 
     # TODO:
-    # 1) Convert expire_duration to expire_date
-    # 2) Upload and save
-    # 3) Generate download and delete link
+    # 1) Convert expire_duration to expire_date [_]
+    # 2) Upload and save [x]
+    # 3) Generate download and delete link [_]
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST, request.FILES)
@@ -29,16 +30,21 @@ class UploadPage(CreateView):
             expire_duration = int(form.cleaned_data["expire_duration"])
             expire_date = self.convert_duration_to_date(expire_duration)
             upload_model = self.upload_and_save_to_db(form, expire_date)
-            return HttpResponseRedirect(
-                reverse("download", kwargs={"pk": upload_model.id})
-            )
+            return self.check_if_file_size_over(upload_model)
+
+    @staticmethod
+    def check_if_file_size_over(upload_model):
+        if upload_model == "Over size":
+            return HttpResponse("File over 100MB are not allow")
+        return HttpResponseRedirect(
+            reverse("download", kwargs={"pk": upload_model.id})
+        )
 
     @staticmethod
     def convert_duration_to_date(expire_duration):
         # TODO(jan): DateTime is not correct
-        expire_date = datetime.fromtimestamp(expire_duration).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        now = datetime.now()
+        expire_date = now.strftime("%Y-%m-%d %H:%M:%S")
         return expire_date
 
     @staticmethod
@@ -46,18 +52,18 @@ class UploadPage(CreateView):
         if not form.file.size >= 104857600:
             form.save()
             return form
-        # return True
-        return HttpResponse("File over 100MB are not allow")
+        else:
+            return "Over size"
 
     def upload_and_save_to_db(self, form, expire_date):
-        # TODO(jan): Check that file is not over 100MB
+        # print(form.cleaned_data["file"])
         form = Upload(
             file=form.cleaned_data["file"],
             password=form.cleaned_data["password"],
             max_downloads=form.cleaned_data["max_downloads"],
             expire_date=expire_date,
         )
-        self.check_file_size(form)
+        return self.check_file_size(form)
 
     @staticmethod
     def password_check(password):
@@ -101,29 +107,51 @@ class Download(DetailView):
 
     def post(self, *args, **kwargs):
         self.object = self.get_object()
+        self.get_upload_file_name(self.object)
 
         if self.object.password is not None:
             return self.verify_password()
-        return self.download_file(self.object)
+        return self.download_file()
 
     def verify_password(self):
         if self.request.POST.get("password") != f"{self.object.password}":
             return HttpResponse("invalid password")
-        return self.download_file(self.object)
+        return self.download_file()
 
-    @staticmethod
-    def download_file(current_object):
+    def get_upload_file_name(self, *args, **kwargs):
+        file_name = self.object.file.name
+        letter = file_name.rsplit("_", 1)
+        extension = letter[1].rsplit(".", 1)
+        # print(os.path.basename(letter[0]), extension[1])
+
+    def download_counter(self):
+        counter = self.object
+        counter.user_downloads = int(counter.user_downloads) + 1
+        counter.save()
+
+    def check_max_download(self):
+        if self.object.max_downloads == self.object.user_downloads:
+            self.delete()
+
+    def delete(self):
+        self.object.delete()
+        os.remove(self.object.file.name)
+        # return HttpResponse(f"{self.object.file.name} reached the downloads limit")
+
+    def download_file(self):
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        filename = f"{os.path.basename(current_object.file.name)}"
-        filepath = base_dir + f"/{current_object.file}"
+        filename = f"{os.path.basename(self.object.file.name)}"
+        filepath = base_dir + f"/{self.object.file}"
         path = open(filepath, "rb")
         mime_type, _ = mimetypes.guess_type(filepath)
         response = HttpResponse(path, content_type=mime_type)
         response["Content-Disposition"] = "attachment; filename=%s" % filename
+        self.download_counter()
+        self.check_max_download()
         return response
 
         # TODO:
-        # 1) Delete file when max_downloads is done [_]
+        # 1) Delete file when max_downloads is done [x]
         # 2) Verify password securely [x]
         # 3) Actually send the download [x]
 
@@ -134,6 +162,9 @@ class Delete(DetailView):
 
     def post(self, *args, **kwargs):
         self.object = self.get_object()
-        # TODO: Actually delete fil
-        self.object.delete()
+        self.delete()
         return HttpResponse("Deleted!")
+
+    def delete(self):
+        self.object.delete()
+        os.remove(self.object.file.name)

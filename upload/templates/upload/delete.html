@@ -3,8 +3,8 @@
 <h1>Delete</h1>
 
 <form action="{% url 'delete' object.id %}" method="POST">
-	<p>Do you want to delete <strong>filename goes here</strong>?</p>
-	{% csrf_token %}
-	<p><input type="submit" value="Delete"></p>
+  <p>Do you want to delete <strong>{{ object.file.name }}</strong>?</p>
+  {% csrf_token %}
+  <p><input type="submit" value="Delete"></p>
 </form>
 {% endblock %}
