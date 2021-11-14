@@ -3,7 +3,7 @@ from django.views.generic import CreateView, DetailView
 from django.urls import reverse
 from django.shortcuts import render
 
-from datetime import datetime
+import datetime
 
 from .form import UploadForm
 from .models import Upload
@@ -43,8 +43,9 @@ class UploadPage(CreateView):
     @staticmethod
     def convert_duration_to_date(expire_duration):
         # TODO(jan): DateTime is not correct
-        now = datetime.now()
-        expire_date = now.strftime("%Y-%m-%d %H:%M:%S")
+        date_and_time = datetime.datetime.now()
+        time_change = datetime.timedelta(seconds=expire_duration)
+        expire_date = date_and_time + time_change
         return expire_date
 
     @staticmethod
