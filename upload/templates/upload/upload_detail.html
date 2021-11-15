@@ -4,7 +4,7 @@
 
 <form action="{% url 'download' object.uuid %}" method="POST">
 {% if object.password %}
-  <p>Password: <input name="password" type="password"></p>
+  <p>Password: <input name="password" type="password" required></p>
 {% endif %}
   {% csrf_token %}
   <p><input type="submit" value="Download"></p>

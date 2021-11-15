@@ -1,15 +1,21 @@
+from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse, HttpResponseRedirect
+from django.contrib.auth.decorators import login_required
 from django.views.generic import CreateView, DetailView
+from django.utils.decorators import method_decorator
+from django.contrib.auth.models import User
+from django.db import IntegrityError
+from django.shortcuts import render
 from django.utils import timezone
 from django.urls import reverse
+from django.views import View
 
+from send.settings import LOGIN_URL
 from .form import UploadForm
 from .models import Upload
 
 import mimetypes
 import datetime
-import random
-import string
 import os
 import re
 
@@ -23,6 +29,7 @@ class UploadPage(CreateView):
     # 2) Upload and save [x]
     # 3) Generate download and delete link [x]
 
+    @method_decorator(login_required(login_url=LOGIN_URL))
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST, request.FILES)
         if form.is_valid():
@@ -58,11 +65,12 @@ class UploadPage(CreateView):
             return "Over size"
 
     def upload_and_save_to_db(self, form, expire_date):
-        form = Upload(
+        form = self.model(
             file=form.cleaned_data["file"],
             password=form.cleaned_data["password"],
             max_downloads=form.cleaned_data["max_downloads"],
             expire_date=expire_date,
+            owner=self.request.user,
         )
         return self.check_file_size(form)
 
@@ -109,8 +117,9 @@ class Download(DetailView):
     # Make it so that you can't download expired files
 
     def get_object(self, queryset=None):
-        return Upload.objects.get(uuid=self.kwargs.get("uuid"))
+        return self.model.objects.get(uuid=self.kwargs.get("uuid"))
 
+    @method_decorator(login_required(login_url=LOGIN_URL))
     def post(self, *args, **kwargs):
         self.object = self.get_object()
         self.get_upload_file_name(self.object)
@@ -161,17 +170,89 @@ class Download(DetailView):
         # 3) Actually send the download [x]
 
 
+class Logout(View):
+    @method_decorator(login_required(login_url=LOGIN_URL))
+    def get(self, *args, **kwargs):
+        logout(self.request)
+        return HttpResponse("Your account has been logout")
+
+
+class Login(View):
+    template_name = "upload/login.html"
+
+    def get(self, *args, **kwargs):
+        return self.check_if_user_authenticated()
+
+    def check_if_user_authenticated(self):
+        if self.request.user.is_authenticated:
+            return HttpResponseRedirect(reverse("upload"))
+        return render(self.request, self.template_name, {})
+
+    def post(self, *args, **kwargs):
+        username = self.request.POST["username"]
+        password = self.request.POST["password"]
+        user = authenticate(self.request, username=username, password=password)
+        if user is not None:
+            login(self.request, user)
+        else:
+            return HttpResponse("Invalid username and/or password")
+        return HttpResponseRedirect(reverse("upload"))
+
+
+class Register(View):
+    template_name = "upload/register.html"
+
+    def get(self, *args, **kwargs):
+        return self.check_if_user_authenticated()
+
+    def check_if_user_authenticated(self):
+        if self.request.user.is_authenticated:
+            return HttpResponseRedirect(reverse("upload"))
+        return render(self.request, self.template_name, {})
+
+    def post(self, *args, **kwargs):
+        username = self.request.POST["username"]
+        password = self.request.POST["password"]
+        confirmation = self.request.POST["confirmation"]
+        return self.username_and_password_checker(
+            username, password, confirmation
+        )
+
+    @staticmethod
+    def username_and_password_checker(username, password, confirmation):
+        if password != confirmation:
+            return HttpResponse("Passwords must match")
+        try:
+            user = User.objects.create_user(
+                username=username, password=password
+            )
+            user.save()
+        except ValueError:
+            return HttpResponse("Fill up the form")
+        except IntegrityError:
+            return HttpResponse("Username already taken")
+        return HttpResponseRedirect("login")
+
+
 class Delete(DetailView):
     model = Upload
     template_name = "upload/delete.html"
 
     def get_object(self, queryset=None):
-        return Upload.objects.get(uuid=self.kwargs.get("uuid"))
+        return self.model.objects.get(uuid=self.kwargs.get("uuid"))
 
+    @method_decorator(login_required(login_url=LOGIN_URL))
     def post(self, *args, **kwargs):
         self.object = self.get_object()
-        self.delete()
-        return HttpResponse("Deleted!")
+        return self.check_owner_of_file()
+
+    def check_owner_of_file(self):
+        if self.request.user == self.object.owner:
+            self.delete()
+            return HttpResponse("Deleted!")
+        return HttpResponse(
+            f"You can't not delete, only <strong>User: {self.request.user}</strong> can delete this file"
+        )
 
     def delete(self):
         self.object.delete()
