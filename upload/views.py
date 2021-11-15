@@ -1,14 +1,13 @@
 from django.http import HttpResponse, HttpResponseRedirect
 from django.views.generic import CreateView, DetailView
+from django.utils import timezone
 from django.urls import reverse
-from django.shortcuts import render
-
-import datetime
 
 from .form import UploadForm
 from .models import Upload
 
 import mimetypes
+import datetime
 import os
 import re
 
@@ -18,7 +17,7 @@ class UploadPage(CreateView):
     form_class = UploadForm
 
     # TODO:
-    # 1) Convert expire_duration to expire_date [_]
+    # 1) Convert expire_duration to expire_date [x]
     # 2) Upload and save [x]
     # 3) Generate download and delete link [_]
 
@@ -43,7 +42,7 @@ class UploadPage(CreateView):
     @staticmethod
     def convert_duration_to_date(expire_duration):
         # TODO(jan): DateTime is not correct
-        date_and_time = datetime.datetime.now()
+        date_and_time = timezone.now()
         time_change = datetime.timedelta(seconds=expire_duration)
         expire_date = date_and_time + time_change
         return expire_date
@@ -57,7 +56,6 @@ class UploadPage(CreateView):
             return "Over size"
 
     def upload_and_save_to_db(self, form, expire_date):
-        # print(form.cleaned_data["file"])
         form = Upload(
             file=form.cleaned_data["file"],
             password=form.cleaned_data["password"],
@@ -137,7 +135,6 @@ class Download(DetailView):
     def delete(self):
         self.object.delete()
         os.remove(self.object.file.name)
-        # return HttpResponse(f"{self.object.file.name} reached the downloads limit")
 
     def download_file(self):
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

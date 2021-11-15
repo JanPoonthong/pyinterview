@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "upload.apps.UploadConfig",
+    "django_crontab",
 ]
 
 MIDDLEWARE = [
@@ -124,3 +125,5 @@ STATIC_URL = "/static/"
 STATIC_ROOT = env("STATIC_ROOT", default=os.path.join(BASE_DIR, "staticfiles"))
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CRONJOBS = [("*/1 * * * *", "upload.cron.auto_file_deleter")]
