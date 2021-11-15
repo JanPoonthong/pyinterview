@@ -23,6 +23,7 @@ class UploadPage(CreateView):
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST, request.FILES)
+        print(self.request.session['member_id'])
         if form.is_valid():
             # TODO(jan): for optional is not ready
             self.password_check(form.cleaned_data["password"])
