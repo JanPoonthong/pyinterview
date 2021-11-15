@@ -1,6 +1,8 @@
 from django.db import models
 from django.urls import reverse
 
+import uuid
+
 
 class Upload(models.Model):
     file = models.FileField(upload_to="file_uploads/%Y-%m-%d/")
@@ -8,7 +10,7 @@ class Upload(models.Model):
     max_downloads = models.IntegerField(blank=True, null=True)
     expire_date = models.DateTimeField()
     user_downloads = models.IntegerField(blank=True, null=True, default=0)
-    # TODO: Add more fields if needed
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
 
     def get_absolute_url(self):
-        return reverse("download", args=(self.id,))
+        return reverse("download", args=str((self.uuid,)))

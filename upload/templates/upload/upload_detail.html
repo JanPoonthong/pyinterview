@@ -2,7 +2,7 @@
 {% block body %}
 <h1>{{ object.file.name }}</h1>
 
-<form action="{% url 'download' object.id %}" method="POST">
+<form action="{% url 'download' object.uuid %}" method="POST">
 {% if object.password %}
   <p>Password: <input name="password" type="password"></p>
 {% endif %}

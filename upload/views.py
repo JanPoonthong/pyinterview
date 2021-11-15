@@ -8,6 +8,8 @@ from .models import Upload
 
 import mimetypes
 import datetime
+import random
+import string
 import os
 import re
 
@@ -19,11 +21,10 @@ class UploadPage(CreateView):
     # TODO:
     # 1) Convert expire_duration to expire_date [x]
     # 2) Upload and save [x]
-    # 3) Generate download and delete link [_]
+    # 3) Generate download and delete link [x]
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST, request.FILES)
-        print(self.request.session['member_id'])
         if form.is_valid():
             # TODO(jan): for optional is not ready
             self.password_check(form.cleaned_data["password"])
@@ -37,7 +38,7 @@ class UploadPage(CreateView):
         if upload_model == "Over size":
             return HttpResponse("File over 100MB are not allow")
         return HttpResponseRedirect(
-            reverse("download", kwargs={"pk": upload_model.id})
+            reverse("download", kwargs={"uuid": upload_model.uuid})
         )
 
     @staticmethod
@@ -101,9 +102,14 @@ class UploadPage(CreateView):
 
 class Download(DetailView):
     model = Upload
+    slug_field = "<uuid:uuid>"
+    slug_url_kwarg = "<uuid:uuid>"
 
     # TODO:
     # Make it so that you can't download expired files
+
+    def get_object(self, queryset=None):
+        return Upload.objects.get(uuid=self.kwargs.get("uuid"))
 
     def post(self, *args, **kwargs):
         self.object = self.get_object()
@@ -158,6 +164,9 @@ class Download(DetailView):
 class Delete(DetailView):
     model = Upload
     template_name = "upload/delete.html"
+
+    def get_object(self, queryset=None):
+        return Upload.objects.get(uuid=self.kwargs.get("uuid"))
 
     def post(self, *args, **kwargs):
         self.object = self.get_object()
