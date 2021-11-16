@@ -22,19 +22,19 @@ Instructions for doing locally:
 
 1.  Run:
 
-        $ cd pyinterview
+        $ cd pyinterview/
         $ ./manage.py migrate --run-syncdb
         $ ./manage.py runserver
 
         or
 
-        $ cd pyinterview
+        $ cd pyinterview/
         $ python3 manage.py migrate --run-syncdb
         $ python3 manage.py runserver
 
 Instructions for doing in Docker and Docker Compose:
 
-        $ python manage.py migrate --run-syncdb && docker-compose build && docker-compose up
+        $ python3 manage.py migrate --run-syncdb && sudo docker-compose build && sudo docker-compose up
 
 Check http://127.0.0.1:8000/ or http://localhost:8000/
 
