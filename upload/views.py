@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.views.generic import CreateView, DetailView
+from django.contrib.auth.hashers import check_password
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 from django.db import IntegrityError
@@ -17,7 +18,6 @@ from .models import Upload
 import mimetypes
 import datetime
 import os
-import re
 
 
 class UploadPage(CreateView):
@@ -33,8 +33,6 @@ class UploadPage(CreateView):
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST, request.FILES)
         if form.is_valid():
-            # TODO(jan): for optional is not ready
-            self.password_check(form.cleaned_data["password"])
             expire_duration = int(form.cleaned_data["expire_duration"])
             expire_date = self.convert_duration_to_date(expire_duration)
             upload_model = self.upload_and_save_to_db(form, expire_date)
@@ -50,7 +48,6 @@ class UploadPage(CreateView):
 
     @staticmethod
     def convert_duration_to_date(expire_duration):
-        # TODO(jan): DateTime is not correct
         date_and_time = timezone.now()
         time_change = datetime.timedelta(seconds=expire_duration)
         expire_date = date_and_time + time_change
@@ -74,44 +71,9 @@ class UploadPage(CreateView):
         )
         return self.check_file_size(form)
 
-    @staticmethod
-    def password_check(password):
-        """8 characters length or more,
-        1 digit or more,
-        1 symbol or more,
-        1 uppercase letter or more,
-        1 lowercase letter or more.
-        """
-        if password is None:
-            return HttpResponseRedirect("24")
-        length_error = len(password) < 8
-        digit_error = re.search(r"\d", password) is None
-        uppercase_error = re.search(r"[A-Z]", password) is None
-        lowercase_error = re.search(r"[a-z]", password) is None
-        symbol_error = (
-            re.search(r"[ !#$%&'()*+,-./[\\\]^_`{|}~" + r'"]', password) is None
-        )
-        password_ok = not (
-            length_error
-            or digit_error
-            or uppercase_error
-            or lowercase_error
-            or symbol_error
-        )
-
-        if not password_ok:
-            return HttpResponseRedirect(reverse("upload"))
-            # return "Password not strong 1 digit or more, 1 symbol or more, 1 uppercase letter or more, 1 lowercase letter or more."
-        pass
-
-    def generate_download_and_delete_link(self):
-        pass
-
 
 class Download(DetailView):
     model = Upload
-    slug_field = "<uuid:uuid>"
-    slug_url_kwarg = "<uuid:uuid>"
 
     # TODO:
     # Make it so that you can't download expired files
@@ -122,22 +84,17 @@ class Download(DetailView):
     @method_decorator(login_required(login_url=LOGIN_URL))
     def post(self, *args, **kwargs):
         self.object = self.get_object()
-        self.get_upload_file_name(self.object)
 
         if self.object.password is not None:
             return self.verify_password()
         return self.download_file()
 
     def verify_password(self):
-        if self.request.POST.get("password") != f"{self.object.password}":
+        if not check_password(
+            self.request.POST.get("password"), self.object.password
+        ):
             return HttpResponse("invalid password")
         return self.download_file()
-
-    def get_upload_file_name(self, *args, **kwargs):
-        file_name = self.object.file.name
-        letter = file_name.rsplit("_", 1)
-        extension = letter[1].rsplit(".", 1)
-        # print(os.path.basename(letter[0]), extension[1])
 
     def download_counter(self):
         counter = self.object
@@ -152,14 +109,23 @@ class Download(DetailView):
         self.object.delete()
         os.remove(self.object.file.name)
 
-    def download_file(self):
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        filename = f"{os.path.basename(self.object.file.name)}"
-        filepath = base_dir + f"/{self.object.file}"
+    @staticmethod
+    def checking_file_type(filename, filepath):
         path = open(filepath, "rb")
         mime_type, _ = mimetypes.guess_type(filepath)
         response = HttpResponse(path, content_type=mime_type)
         response["Content-Disposition"] = "attachment; filename=%s" % filename
+        return response
+
+    def getting_file_dir(self):
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        filename = f"{os.path.basename(self.object.file.name)}"
+        filepath = base_dir + f"/{self.object.file}"
+        return filename, filepath
+
+    def download_file(self):
+        filename, filepath = self.getting_file_dir()
+        response = self.checking_file_type(filename, filepath)
         self.download_counter()
         self.check_max_download()
         return response
@@ -251,9 +217,10 @@ class Delete(DetailView):
             self.delete()
             return HttpResponse("Deleted!")
         return HttpResponse(
-            f"You can't not delete, only <strong>User: {self.request.user}</strong> can delete this file"
+            f"You can't not delete, only <strong>User: {self.object.owner}</strong> can delete this file"
         )
 
     def delete(self):
         self.object.delete()
+        print(type(self.object.file.name))
         os.remove(self.object.file.name)

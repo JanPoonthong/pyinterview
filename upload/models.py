@@ -1,3 +1,4 @@
+from django.contrib.auth.hashers import make_password
 from django.conf import settings
 from django.urls import reverse
 from django.db import models
@@ -18,3 +19,10 @@ class Upload(models.Model):
 
     def get_absolute_url(self):
         return reverse("download", args=str((self.uuid,)))
+
+    def save(self, *args, **kwargs):
+        if self.password is None:
+            super(Upload, self).save(*args, **kwargs)
+        else:
+            self.password = make_password(self.password)
+            super(Upload, self).save(*args, **kwargs)

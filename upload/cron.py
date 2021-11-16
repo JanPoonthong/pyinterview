@@ -7,5 +7,5 @@ import os
 def auto_file_deleter():
     for i in Upload.objects.all():
         if i.expire_date < timezone.now():
-            os.remove(i.file.name)
+            os.remove(f"{i.file.name}")
             i.delete()
