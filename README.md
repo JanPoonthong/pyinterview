@@ -34,7 +34,7 @@ Instructions for doing locally:
 
 Instructions for doing in docker:
 
-        $ docker build . -t pynai && docker-compose up
+        $ python manage.py migrate --run-syncdb && docker-compose build && docker-compose up
 
 After doing `python3 manage.py runserver`, check http://127.0.0.1:8000/ or http://localhost:8000/
 
