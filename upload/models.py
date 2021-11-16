@@ -23,7 +23,6 @@ class Upload(models.Model):
 
     def delete(self, *args, **kwargs):
         if os.path.isfile(self.file.path):
-            print(self.file.path)
             os.remove(self.file.path)
         super(Upload, self).delete(*args, **kwargs)
 

@@ -9,5 +9,3 @@ def auto_file_deleter():
             timezone.now()
         ):
             return i.delete()
-        else:
-            return f"Nothing was Delete"
