@@ -34,7 +34,7 @@ Instructions for doing locally:
 
 Instructions for doing in Docker and Docker Compose:
 
-        $ python3 manage.py migrate --run-syncdb && sudo docker-compose build && sudo docker-compose up
+    $ python3 manage.py migrate --run-syncdb && sudo docker-compose build && sudo docker-compose up
 
 Check http://127.0.0.1:8000/ or http://localhost:8000/
 
