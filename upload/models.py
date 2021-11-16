@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.db import models
 
 import uuid
+import os
 
 
 class Upload(models.Model):
@@ -19,6 +20,12 @@ class Upload(models.Model):
 
     def get_absolute_url(self):
         return reverse("download", args=str((self.uuid,)))
+
+    def delete(self, *args, **kwargs):
+        if os.path.isfile(self.file.path):
+            print(self.file.path)
+            os.remove(self.file.path)
+        super(Upload, self).delete(*args, **kwargs)
 
     def save(self, *args, **kwargs):
         if self.password is None:

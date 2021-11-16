@@ -104,11 +104,7 @@ class Download(DetailView):
 
     def check_max_download(self):
         if self.object.max_downloads == self.object.user_downloads:
-            self.delete()
-
-    def delete(self):
-        self.object.delete()
-        os.remove(self.object.file.name)
+            self.object.delete()
 
     @staticmethod
     def checking_file_type(filename, filepath):
@@ -215,12 +211,8 @@ class Delete(DetailView):
 
     def check_owner_of_file(self):
         if self.request.user == self.object.owner:
-            self.delete()
+            self.object.delete()
             return HttpResponse("Deleted!")
         return HttpResponse(
             f"You can't not delete, only <strong>User: {self.object.owner}</strong> can delete this file"
         )
-
-    def delete(self):
-        self.object.delete()
-        os.remove(self.object.file.name)
