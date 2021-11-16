@@ -16,7 +16,7 @@ SECRET_KEY = "jkkv-2fh%*z^e51r=x7ttjr$w1iec3q-vp2)glmmq9^by(o@s7"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", default=True)
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
 
 
 # Application definition
