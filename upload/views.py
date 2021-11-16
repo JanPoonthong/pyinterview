@@ -48,9 +48,9 @@ class UploadPage(CreateView):
 
     @staticmethod
     def convert_duration_to_date(expire_duration):
-        date_and_time = timezone.now()
-        time_change = datetime.timedelta(seconds=expire_duration)
-        expire_date = date_and_time + time_change
+        expire_date = timezone.localtime(timezone.now()) + timezone.timedelta(
+            seconds=expire_duration
+        )
         return expire_date
 
     @staticmethod
@@ -222,5 +222,4 @@ class Delete(DetailView):
 
     def delete(self):
         self.object.delete()
-        print(type(self.object.file.name))
         os.remove(self.object.file.name)
