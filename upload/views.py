@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import CreateView, DetailView
 from django.contrib.auth.hashers import check_password
 from django.utils.decorators import method_decorator
+from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.shortcuts import render
@@ -79,7 +80,7 @@ class Download(DetailView):
     # Make it so that you can't download expired files
 
     def get_object(self, queryset=None):
-        return self.model.objects.get(uuid=self.kwargs.get("uuid"))
+        return get_object_or_404(self.model, uuid=self.kwargs.get("uuid"))
 
     @method_decorator(login_required(login_url=LOGIN_URL))
     def post(self, *args, **kwargs):
@@ -205,7 +206,7 @@ class Delete(DetailView):
     template_name = "upload/delete.html"
 
     def get_object(self, queryset=None):
-        return self.model.objects.get(uuid=self.kwargs.get("uuid"))
+        return get_object_or_404(self.model, uuid=self.kwargs.get("uuid"))
 
     @method_decorator(login_required(login_url=LOGIN_URL))
     def post(self, *args, **kwargs):

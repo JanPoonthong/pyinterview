@@ -9,7 +9,7 @@ def auto_file_deleter():
         if timezone.localtime(i.expire_date) < timezone.localtime(
             timezone.now()
         ):
-            os.remove(f"{i.file.name}")
+            # os.remove(f"{i.file.name}")
             return i.delete()
         else:
             return f"Nothing was Delete"
