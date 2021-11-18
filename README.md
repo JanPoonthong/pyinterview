@@ -1,4 +1,4 @@
-# Pynai
+# Pyinterview
 
 ## Requirements
 
@@ -26,7 +26,7 @@ Instructions for doing locally:
 
         $ cd pyinterview/
         $ python3 manage.py migrate --run-syncdb
-        && python manage.py crontab add
+        && python3 manage.py crontab add
         $ python3 manage.py runserver
 
 Instructions for doing in Docker and Docker Compose:
@@ -56,7 +56,7 @@ Instructions:
 
         $ cd pyinterview
         $ python3 manage.py migrate --run-syncdb
-        $ python manage.py crontab add
+        $ python3 manage.py crontab add
         $ python3 manage.py runserver
 
 Check http://127.0.0.1:8000/ or http://localhost:8000/
