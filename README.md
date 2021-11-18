@@ -25,8 +25,7 @@ Instructions for doing locally:
 1.  Run:
 
         $ cd pyinterview/
-        $ python3 manage.py migrate --run-syncdb
-        && python3 manage.py crontab add
+        $ python3 manage.py migrate --run-syncdb && python3 manage.py crontab add
         $ python3 manage.py runserver
 
 Instructions for doing in Docker and Docker Compose:
